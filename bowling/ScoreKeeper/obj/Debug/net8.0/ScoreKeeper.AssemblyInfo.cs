@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ScoreKeeper")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+98a04b8d9091645a09f97a77559d785f95dbf78a")]
 [assembly: System.Reflection.AssemblyProductAttribute("ScoreKeeper")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ScoreKeeper")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

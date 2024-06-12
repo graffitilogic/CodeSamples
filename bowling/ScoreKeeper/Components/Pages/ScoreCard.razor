@@ -1,0 +1,363 @@
+﻿@page "/scorecard"
+@rendermode InteractiveServer
+<PageTitle>Score Card</PageTitle>
+
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th,
+    td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: center;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    .flex-parent-element {
+        display: flex;
+        width: 50%;
+    }
+
+    .flex-child-element {
+        flex: 1;
+        margin: 10px;
+    }
+
+    .flex-child-element:first-child {
+        margin-right: 20px;
+    }
+
+    .error{
+        color:red;
+    }
+</style>
+
+
+<h1>@opMode</h1>
+
+
+@if (@thisGame == null)
+{
+    <div class="flex-parent-element">
+    <div class="flex-child-element magenta">
+        <p><em>Game Title:</em>
+            <input @bind="newGameTitle" />
+        </p>
+    </div>
+    <div class="flex-child-element green">
+        <p><em>New Player:</em>
+            <input @bind="newPlayerName" />
+            <br/> Bumpers? <input @bind="newPlayerBumpers"  title="Bumpers" type="checkbox"  /> 
+        </p>
+        <p>
+        <button class="btn btn-primary" @onclick="AddPlayer">Add Player</button>
+        </p>
+        <p>
+            <em>Players</em><br />
+            <select class="form-control" @bind="@selectedPlayerID" size="8">
+                @if (registered_Players != null)
+                    {
+                        @foreach (var newPlayer in registered_Players)
+                        {
+                            <option value="@newPlayer.uniqueID">@newPlayer.name</option>
+                        }
+                    }
+                </select><br />
+                <button class="btn btn-primary" @onclick="RemovePlayer">Remove Player</button>
+            </p>
+
+        </div>
+    </div>
+    <p>
+        <button class="btn btn-primary" @onclick="StartGame">Start Game</button>
+    </p>
+
+}
+else
+{
+    <table class="table">
+    <thead>
+        <tr>
+            <th rowspan="2">Player</th>
+            @for (int i = 0; i < 9; i++)
+                {
+                    <th colspan="2">Frame @(i + 1)</th>
+                }
+                <th colspan="3">Frame 10</th>
+            </tr>
+            <tr>
+                <!-- Standard Frames -->
+                @for (int i = 0; i < 9; i++)
+                {
+                    @for (int j = 0; j < 2; j++)
+                    {
+                        <th>Thow @(j + 1)</th>
+                    }
+                }
+
+
+                <!-- Bonus Frame -->
+                @for (int i = 0; i < 3; i++)
+                {
+                    <th>Throw @(i + 1)</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var thisPlayer in thisGame.players)
+            {
+                <tr>
+                    <td rowspan="2">@thisPlayer.name</td>
+                    @foreach (var thisFrame in thisPlayer.frames)
+                    {
+
+                        <td>@(thisFrame.first == null ? " " : thisFrame.first.displayValue())</td>
+                        <td>@(thisFrame.second == null ? " " : thisFrame.second.displayValue())</td>
+                        if (thisFrame.number == 10)
+                        {
+                            <td>@(thisFrame.third == null ? " " : thisFrame.third.displayValue())</td>
+                        }
+                    }
+                </tr>
+                <tr>
+            @foreach (var thisFrame in thisPlayer.frames)
+                    {
+                        @if (thisFrame.number < 10)
+                        {
+                            <td colspan="2">@thisFrame.runningScore</td>
+                        }
+                        else if (thisFrame.number == 10)
+                        {
+                            <td colspan="3"><strong>@thisFrame.runningScore</strong></td>
+                        }
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+    <hr />
+    <h2>Score Entry</h2>
+    <p>
+    Player:
+    <select @bind="@selectedPlayerID">
+        @if (thisGame.players != null)
+            {
+                @foreach (var player in thisGame.players)
+                {
+                    <option value="@player.uniqueID">@player.name</option>
+                }
+            }
+        </select>
+    </p>
+    <p>
+    Frame:  <em>@thisGame.currentProgress.frame</em>
+    Throw:  <em>@thisGame.currentProgress.attempt</em>
+</p>
+    <p>
+        Throw Result: <input @bind="scoringResult" maxlength="1" />  <button class="btn btn-primary" @onclick="RecordThrow">Save Result</button>
+    </p>
+    <p class="red">@errorText</p>
+}
+
+@code {
+    string opMode = "Game Setup";
+    string newGameTitle = "";
+    private models.Game? thisGame;
+
+    string errorText = "";
+
+    //player setup
+    string newPlayerName = "";
+    bool newPlayerBumpers;
+
+    List<models.Player> registered_Players = new List<models.Player>();
+    Guid selectedPlayerID;
+    int autoSelectedPlayerIndex;
+    int lastAutoSelectedPlayerIndex;
+
+    models.FrameAttempt? lastAttempt;
+
+    string? scoringResult;
+
+    private void AddPlayer()
+    {
+        if (registered_Players == null) registered_Players = new List<models.Player>();
+        registered_Players.Add(new models.Player(newPlayerName, newPlayerBumpers));
+        newPlayerName = "";
+        newPlayerBumpers = false;
+    }
+
+    private void RemovePlayer()
+    {
+        registered_Players = registered_Players?.Where(p => p.uniqueID != selectedPlayerID).ToList<models.Player>();
+        selectedPlayerID = Guid.Empty;
+    }
+
+    private void StartGame()
+    {
+        opMode = "Game Scoring";
+        thisGame = new models.Game(newGameTitle);
+        newGameTitle = "";
+
+        foreach (models.Player p in registered_Players)
+        {
+            thisGame.players.Add(p);
+        }
+
+        setPlayerIndex(0);
+    
+        selectedPlayerID = thisGame.players[autoSelectedPlayerIndex].uniqueID;
+        thisGame.currentProgress = new models.FrameAttempt(1, 1,10);
+    
+    }
+
+    private void RecordThrow()
+    {
+        errorText = "";
+
+        bool isStrike = scoringResult.ToLower().Equals("x");
+        bool isSpare = scoringResult.Equals("/");
+        int pinCount = 0;
+        bool result = int.TryParse(scoringResult, out pinCount);
+
+        if (!checkRules(scoringResult)) return;
+        scoringResult = "";
+
+        models.Player p = thisGame.players.Where(p => p.uniqueID == selectedPlayerID).First();
+
+        if (p != null)
+        {
+            p.currentFrame = thisGame.currentProgress.frame;
+            lastAttempt = p.setFrameValue(thisGame.currentProgress.frame, isStrike, isSpare, pinCount);
+            if (isStrike) p.addStrike(thisGame.currentProgress.frame, lastAttempt.attempt); 
+            if (isSpare) p.addSpare(thisGame.currentProgress.frame, lastAttempt.attempt);
+            handleProgress(lastAttempt);
+        }
+    }
+
+private bool checkRules(string sVal){
+    bool result = true;
+    
+    int iVal = 0;
+    if (sVal.ToLower().Equals("x") || sVal.Equals("/") || int.TryParse(sVal,out iVal)){
+
+    if (thisGame.currentProgress.attempt==1 && sVal.Equals("/")){
+        errorText = "A Spare on the first throw?  How many pitchers of beer have you had?";
+        result=false;
+    }
+    if (lastAttempt !=null){
+    if (iVal> lastAttempt.remainingPins) {
+        errorText = iVal.ToString() + " pins is too high. Last frame left " + lastAttempt.remainingPins.ToString() +  " pins standing.";
+        result=false;
+        }
+    }
+}
+else{
+    errorText = "'" + sVal + "' is an invalid value. Available values: [X,/,[0-9]]";
+    result=false;  
+}
+    return result;
+}
+    private void handleProgress(models.FrameAttempt lastAttempt)
+    {
+        thisGame.currentProgress.attempt = lastAttempt.attempt + 1;
+
+        if (thisGame.currentProgress.attempt > 2 && thisGame.currentProgress.frame != 10) thisGame.currentProgress.attempt = 1;
+        if (thisGame.currentProgress.frame < 10)
+        {
+            autoProgress(lastAttempt, false);
+        }
+        else
+        {
+            //tenthframe
+            autoProgress(lastAttempt, true);
+        }
+    }
+
+    private void autoProgress(models.FrameAttempt lastAttempt, bool lastFrame)
+    {
+        //auto progress frame?
+        bool hasValue = true;
+
+        int p_iter = 0;
+
+        foreach (models.Player p in thisGame.players) //check players for values
+        {
+            models.Frame f = p.frames[thisGame.currentProgress.frame - 1];
+            if (!lastFrame)
+            {
+                hasValue = (f.first != null && f.second != null);
+            }
+            else //lastframe
+            {
+                if (f.allowBonusThrow())
+                {
+                    hasValue = (f.first != null && f.second != null && f.third != null);
+                }
+                else
+                {
+                    hasValue = (f.first != null && f.second != null);
+                    if (hasValue) f.third = new models.Attempt(false, false, false, 0); //no third throw for you
+                }
+            }
+            if (!hasValue)
+            {
+                //players needs more scoring
+                setPlayerIndex(p_iter);
+                selectedPlayerID = thisGame.players[autoSelectedPlayerIndex].uniqueID;
+                break;
+            }
+            p_iter++;
+        }
+
+        if (hasValue) //the last checked player had values
+        {
+            if (p_iter == thisGame.players.Count && (!lastFrame)) // is this the last player?
+            {
+                //last player has values new frame
+                thisGame.currentProgress.frame++;
+                setPlayerIndex(0);
+                lastAttempt = null;  
+            }
+            else //incrememnt player
+            {
+                setPlayerIndex((autoSelectedPlayerIndex == thisGame.players.Count - 1) ? 0 : autoSelectedPlayerIndex + 1);
+            }
+            selectedPlayerID = thisGame.players[autoSelectedPlayerIndex].uniqueID;
+
+            //update each players copy of frame progress, just because maybe they are at the bar and you need to twilio out a
+            //message to get back to the lane
+            foreach (models.Player p in thisGame.players)
+            {
+                p.currentFrame = thisGame.currentProgress.frame;
+            }
+        }
+    }
+    
+    private void setPlayerIndex(int i){
+        lastAutoSelectedPlayerIndex = autoSelectedPlayerIndex;
+        autoSelectedPlayerIndex=i;
+        if (autoSelectedPlayerIndex!=lastAutoSelectedPlayerIndex) lastAttempt = null;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate asynchronous loading to demonstrate streaming rendering
+        //await Task.Delay(500);
+        //startGame();
+    }
+
+
+#line default
+#line hidden
+#nullable disable
+#nullable restore
+#line 2 "/Users/billdodd/Documents/code/samples/bowling/ScoreKeeper/Components/Pages/ScoreCard.razor"
+
+}

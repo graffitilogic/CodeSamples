@@ -27,3 +27,4 @@
 /Users/billdodd/Documents/code/samples/bowling/ScoreKeeper/obj/Debug/net8.0/ScoreKeeper.pdb
 /Users/billdodd/Documents/code/samples/bowling/ScoreKeeper/obj/Debug/net8.0/ScoreKeeper.genruntimeconfig.cache
 /Users/billdodd/Documents/code/samples/bowling/ScoreKeeper/obj/Debug/net8.0/ref/ScoreKeeper.dll
+/Users/billdodd/Documents/code/samples/bowling/ScoreKeeper/obj/Debug/net8.0/ScoreKeeper.sourcelink.json
