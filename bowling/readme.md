@@ -24,10 +24,11 @@ As far as these things go, I thought this is one of the more thought-out and wel
 In the future as I teach myself other platforms and frameworks, I intend to use this as a sample project to explore new toolchains.  
 
 **Self-imposed limitations aka, "The excuses"** :)
-Spend no more than a couple of hours
-Do not use a quick-start project unless it is built into the IDE
-Use an IDE that isn't your daily driver (to gain experience)
-   - (I used VS Code on a mac instead of full VS on Windows)
-Use a platform or framework that isn't your daily driver 
- - (.NET Core Razor Web App)
- Do not use AI or CoPilot
+
+ - Spend no more than a couple of hours 
+ - Do not use a quick-start project, unless it is built into the IDE 
+ - Use an IDE that isn't your daily driver (to gain experience)
+      - (I used VS Code on a mac instead of full VS on Windows) 
+- Use a platform or framework that isn't your daily driver 
+    - (.NET Core Razor Web App)  
+    - Do not use AI or CoPilot
