@@ -31,4 +31,4 @@ In the future as I teach myself other platforms and frameworks, I intend to use 
       - (I used VS Code on a mac instead of full VS on Windows) 
 - Use a platform or framework that isn't your daily driver 
     - (.NET Core Razor Web App)  
-    - Do not use AI or CoPilot
+- Do not use AI or CoPilot
